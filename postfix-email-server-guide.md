@@ -337,3 +337,214 @@ sudo nano /etc/postfix/main.cf
 - Regularly update SSL certificates
 
 Your Postfix server is now configured to handle email for all three domains with the specified email addresses.
+
+## Setting Up Outlook to Connect to Your Email Server
+
+### Prerequisites
+
+- Your Postfix/Dovecot server is running and accessible
+- Port 993 (IMAP SSL) and 587 (SMTP) are open and forwarded
+- SSL certificate is properly configured
+
+### Step 1: Gather Connection Information
+
+For each email account, you'll need:
+
+- **Email Address**: contact@psychebot.pro, contact@syedqutubuddin.in, or contact@website14.com
+- **IMAP Server**: mail.psychebot.pro
+- **IMAP Port**: 993 (SSL/TLS)
+- **SMTP Server**: mail.psychebot.pro
+- **SMTP Port**: 587 (STARTTLS)
+- **Username**: Your email address (full email address)
+- **Password**: You'll need to set this up (see authentication setup below)
+
+### Step 2: Set Up Email Authentication
+
+Since you're using virtual mailboxes, you need to set up authentication. Create a password file:
+
+```bash
+sudo nano /etc/postfix/virtual_passwords
+```
+
+Add your email accounts with passwords:
+
+```
+contact@psychebot.pro:your_password_here
+contact@syedqutubuddin.in:your_password_here
+contact@website14.com:your_password_here
+```
+
+Create the hash database:
+
+```bash
+sudo postmap /etc/postfix/virtual_passwords
+```
+
+### Step 3: Configure Postfix for Authentication
+
+Edit Postfix main configuration:
+
+```bash
+sudo nano /etc/postfix/main.cf
+```
+
+Add these lines to the authentication section:
+
+```conf
+# Virtual Authentication
+virtual_transport = lmtp:unix:private/dovecot-lmtp
+virtual_mailbox_domains = psychebot.pro, syedqutubuddin.in, website14.com
+virtual_mailbox_maps = hash:/etc/postfix/vmaps
+virtual_alias_maps = hash:/etc/postfix/vmaps
+virtual_mailbox_base = /var/mail/vhosts
+virtual_minimum_uid = 100
+virtual_uid_maps = static:5000
+virtual_gid_maps = static:5000
+```
+
+### Step 4: Configure Dovecot for Authentication
+
+Edit Dovecot authentication:
+
+```bash
+sudo nano /etc/dovecot/conf.d/10-auth.conf
+```
+
+Replace the content with:
+
+```conf
+disable_plaintext_auth = no
+auth_mechanisms = plain login
+
+passdb {
+  driver = passwd-file
+  args = scheme=SHA512-CRYPT username_format=%u /etc/postfix/virtual_passwords
+}
+
+userdb {
+  driver = static
+  args = uid=vmail gid=vmail home=/var/mail/vhosts/%d/%n
+}
+```
+
+### Step 5: Configure Dovecot for LMTP
+
+Edit Dovecot LMTP configuration:
+
+```bash
+sudo nano /etc/dovecot/conf.d/20-lmtp.conf
+```
+
+Add:
+
+```conf
+protocol lmtp {
+  mail_plugins = $mail_plugins sieve
+}
+```
+
+### Step 6: Restart Services
+
+```bash
+sudo systemctl restart postfix
+sudo systemctl restart dovecot
+```
+
+### Step 7: Outlook Configuration
+
+#### For Outlook 2016/2019/365:
+
+1. **Open Outlook**
+2. **Go to File → Add Account**
+3. **Enter your email address** (e.g., contact@psychebot.pro)
+4. **Click "Connect"**
+5. **Choose "IMAP"** when prompted
+6. **Enter the following settings:**
+
+**Incoming Mail (IMAP):**
+
+- Server: mail.psychebot.pro
+- Port: 993
+- Encryption: SSL/TLS
+- Username: contact@psychebot.pro (full email address)
+- Password: (the password you set in virtual_passwords)
+
+**Outgoing Mail (SMTP):**
+
+- Server: mail.psychebot.pro
+- Port: 587
+- Encryption: STARTTLS
+- Username: contact@psychebot.pro (full email address)
+- Password: (same password)
+
+#### For Outlook 2013 and earlier:
+
+1. **Go to File → Account Settings**
+2. **Click "New"**
+3. **Select "Manual setup or additional server types"**
+4. **Choose "POP or IMAP"**
+5. **Fill in the settings as above**
+
+### Step 8: Test Connection
+
+1. **Send a test email** to yourself
+2. **Check if you receive it**
+3. **Check mail logs** if there are issues:
+   ```bash
+   sudo tail -f /var/log/mail.log
+   ```
+
+### Troubleshooting Outlook Connection Issues
+
+#### Common Issues:
+
+1. **"Cannot connect to server"**
+
+   - Check if port 993 is open: `telnet mail.psychebot.pro 993`
+   - Verify firewall settings
+   - Check if Dovecot is running: `sudo systemctl status dovecot`
+
+2. **"Authentication failed"**
+
+   - Verify password in `/etc/postfix/virtual_passwords`
+   - Check Dovecot logs: `sudo tail -f /var/log/mail.log`
+   - Ensure username is full email address
+
+3. **"SSL/TLS error"**
+
+   - Check SSL certificate: `openssl s_client -connect mail.psychebot.pro:993`
+   - Verify certificate path in Dovecot config
+
+4. **"Cannot send email"**
+   - Check SMTP port 587: `telnet mail.psychebot.pro 587`
+   - Verify SMTP authentication settings
+   - Check Postfix logs: `sudo tail -f /var/log/mail.log`
+
+#### Debug Commands:
+
+```bash
+# Test IMAP connection
+telnet mail.psychebot.pro 993
+
+# Test SMTP connection
+telnet mail.psychebot.pro 587
+
+# Check Dovecot status
+sudo systemctl status dovecot
+
+# Check Postfix status
+sudo systemctl status postfix
+
+# View mail logs
+sudo tail -f /var/log/mail.log
+```
+
+### Security Notes:
+
+- Use strong passwords for email accounts
+- Consider implementing SPF, DKIM, and DMARC records
+- Regularly update SSL certificates
+- Monitor mail logs for suspicious activity
+- Consider using fail2ban for additional security
+
+Your Outlook should now be able to connect to your Postfix/Dovecot email server!
