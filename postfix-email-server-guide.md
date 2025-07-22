@@ -34,7 +34,7 @@ During installation, you'll be prompted to configure Postfix. Choose:
 ## Step 3: Install Additional Dependencies
 
 ```bash
-sudo apt install mailutils dovecot-core dovecot-imapd dovecot-pop3d -y
+sudo apt install mailutils dovecot-core dovecot-imapd dovecot-pop3d sasl2-bin libsasl2-modules -y
 ```
 
 ## Step 4: Configure Postfix Main Configuration
@@ -193,6 +193,7 @@ submission inet n       -       y       -       -       smtpd
 Create SASL configuration:
 
 ```bash
+sudo mkdir -p /etc/postfix/sasl
 sudo nano /etc/postfix/sasl/smtpd.conf
 ```
 
@@ -201,6 +202,27 @@ Add:
 ```
 pwcheck_method: saslauthd
 mech_list: plain login
+```
+
+Create the SASL configuration directory and file:
+
+```bash
+sudo mkdir -p /etc/postfix/sasl
+sudo nano /etc/postfix/sasl/smtpd.conf
+```
+
+Add the content above, then configure SASL to use PAM:
+
+```bash
+sudo nano /etc/default/saslauthd
+```
+
+Set these values:
+
+```
+START=yes
+MECHANISMS=pam
+OPTIONS="-c -m /var/spool/postfix/var/run/saslauthd"
 ```
 
 ## Step 11: Start and Enable Services
@@ -217,6 +239,11 @@ sudo systemctl enable dovecot
 # Start and enable SASL
 sudo systemctl start saslauthd
 sudo systemctl enable saslauthd
+
+# Create the SASL socket directory for Postfix
+sudo mkdir -p /var/spool/postfix/var/run/saslauthd
+sudo chown postfix:sasl /var/spool/postfix/var/run/saslauthd
+sudo chmod 710 /var/spool/postfix/var/run/saslauthd
 ```
 
 ## Step 12: Test Configuration
