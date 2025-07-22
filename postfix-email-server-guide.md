@@ -92,7 +92,8 @@ sudo mkdir -p /var/mail/vhosts/psychebot.pro
 sudo mkdir -p /var/mail/vhosts/syedqutubuddin.in
 sudo mkdir -p /var/mail/vhosts/website14.com
 
-# Create virtual user
+# Create virtual group and user
+sudo groupadd -g 5000 vmail
 sudo useradd -r -u 5000 -g 5000 -d /var/mail/vhosts -s /sbin/nologin vmail
 sudo chown -R vmail:vmail /var/mail/vhosts
 ```
