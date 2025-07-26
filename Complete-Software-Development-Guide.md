@@ -2,6 +2,10 @@
 
 ## _The Universal Guide for High-Level Software Development_
 
+**Author:** Syed Qutubuddin B Asadi
+
+**Support the Author:** [Buy me a coffee](https://buymeacoffee.com/contact9rg)
+
 ---
 
 ## Preface
@@ -3204,6 +3208,12 @@ Remember that becoming an exceptional developer is not about mastering every tec
 The most important thing is to start where you are, practice consistently, and never stop learning. Every line of code you write is an opportunity to improve, every bug you fix is a chance to learn, and every system you build is a contribution to the digital world we're creating together.
 
 Keep coding, keep learning, and keep building software that makes a difference.
+
+---
+
+**Author:** Syed Qutubuddin B Asadi
+
+**Support the Author:** [Buy me a coffee](https://buymeacoffee.com/contact9rg)
 
 ---
 
